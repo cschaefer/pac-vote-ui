@@ -1,0 +1,76 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/firebase-element/firebase-collection.html">
+<link rel="import" href="../../bower_components/iron-localstorage/iron-localstorage.html">
+
+
+<dom-module id="datasource-ballots">
+
+  <template>
+
+    <style>
+    </style>
+
+    <firebase-collection location="https://glowing-fire-9186.firebaseio.com/ballots"
+                         data="{{fbBallots}}"
+                         log="true"
+                         on-firebase-value="_firebaseLoaded">
+    </firebase-collection>
+
+    <!-- Backfill ballots from localstorage. This prevents an initial flash while
+         we're waiting to hear from Firebase, and it lets the user see their
+         old ballots if they start the app offline.
+         This SHOULD NOT write to Firebase. If the user has cleared their
+         localstorage, it should not nullify everything saved in Firebase. -->
+    <iron-localstorage name="local-ballots"
+                       on-iron-localstorage-load="_backupLoaded"
+                       value="{{backupBallots}}">
+    </iron-localstorage>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'datasource-ballots',
+      properties: {
+        ballots: {
+          notify: true
+/*          value: [
+            {
+              ballotId: "1",
+              title: "title",
+              description: "description",
+              choices: [
+                "choice1",
+                "choice2"
+              ]
+            }
+
+          ]
+          */
+        },
+        _firebaseConnected: {
+          value: false
+        }
+      },
+
+      ready: function () {
+        console.log("Starting datasource ...");
+      },
+
+      _firebaseLoaded: function() {
+        console.log("Firebase connected!");
+        this._firebaseConnected = true;
+        this.ballots = this.fbBallots;
+        console.log("Updated ballots ", this.ballots.length);
+        this.backupBallots = this.fbBallots;
+        this.linkPaths('fbBallots', 'ballots');
+        this.linkPaths('backupBallots', 'ballots');
+      },
+      _backupLoaded: function() {
+        console.log("Loading backup!");
+        if (!this._firebaseConnected) {
+          this.ballots = this.backupBallots.slice();
+        }
+      }
+    });
+  </script>
+</dom-module>

@@ -1,0 +1,205 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+
+<link rel="import" href="../../bower_components/neon-animation/neon-animation.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
+
+<link rel="import" href="../manage-user-item/manage-user-item.html">
+
+
+<dom-module id="manage-user-view">
+  <template>
+
+    <style style is="custom-style" include="iron-flex iron-flex-alignment iron-positioning">
+      :host {
+        display:block;
+        height: 100%;
+        font-family: 'Roboto', sans-serif;
+      }
+
+      app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 212px;
+        color: #444;
+        background-color: #03A9F4;
+        --app-header-background-front-layer: {
+          background-color: #3f51b5;
+          background-position: left center;
+        };
+      }
+      paper-icon-button {
+        --paper-icon-button-ink-color: white;
+        --paper-icon-button: {
+            color: #444;
+        };
+      }
+      app-toolbar.tall {
+        height: 148px;
+      }
+      [title] {
+        font-weight: bolder;
+        margin-left: 108px;
+
+      }
+      [condensed-title] {
+        color: #444;
+        font-weight: lighter;
+        margin-left: 30px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      [condensed-title] i {
+        color: #444;
+        font-weight: 100;
+        font-style: normal;
+      }
+      @media (max-width: 639px) {
+        [title] {
+          margin-left: 50px;
+          font-size: 30px;
+        }
+        [condensed-title] {
+          color: #444;
+          font-size: 15px;
+        }
+      }
+
+      app-header-layout {
+        background-color: #ffff8d;
+      }
+
+      .avatar {
+        display: block;
+        margin: 0 auto 10px auto;
+        border-radius: 50%;
+      }
+
+
+      #viewContent {
+           background-color: #ffff8d;
+           padding-top: 16rem;
+      }
+
+      #add {
+        position: absolute;
+        right: 0;
+        margin: -1.9rem 28.5rem;
+      }
+
+      ballot-list-item {
+        background-color: #fff;
+      }
+
+      .content {
+        padding: 56px;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+    </style>
+    <app-header-layout>
+      <app-header id="toolbar" condenses reveals effects="waterfall resize-title blend-background parallax-background">
+        <app-toolbar>
+          <paper-icon-button id="back" icon="arrow-back" on-tap="_onClose"></paper-icon-button>
+          <h4 condensed-title>Managed Users ...</h4>
+        </app-toolbar>
+        <app-toolbar class="tall">
+          <h1 title>Manage Users</h1>
+        </app-toolbar>
+      </app-header>
+
+      <div content id="viewContent" class="flex layout vertical content">
+        <template is="dom-repeat" items="{{managedUsers}}" as="managedUser" on-dom-change="_repeatRender">
+
+          <manage-user-item managed-user={{managedUser}} is-administrator={{isAdministrator}}></manage-user-item>
+
+        </template>
+      </div>
+    </app-header-layout>
+
+
+  </template>
+  <script>
+      Polymer({
+        is: 'manage-user-view',
+
+        behaviors: [
+          Polymer.NeonAnimationRunnerBehavior,
+          Polymer.NeonSharedElementAnimatableBehavior,
+        ],
+
+        properties: {
+          isAdministrator: {
+            type: Boolean
+          },
+          managedUsers: {
+            type: Array,
+            notify: true
+          },
+          animationConfig: {
+             value: function() {
+               return {
+                 'entry': [{
+                     name: 'fade-in-animation',
+                     node: this
+                 },{
+                     name: 'slide-from-top-animation',
+                     node: this.$.toolbar,
+                     timing: {"duration": 200 }
+                 }],
+                 'exit': [{
+                     name: 'hero-animation',
+                     id: 'hero-add',
+                     fromPage: this
+                 }, {
+                     name: 'hero-animation',
+                     id: 'hero-edit',
+                     fromPage: this
+                 }, {
+                     name: 'fade-out-animation',
+                     node: this
+                 }]
+              }
+            }
+          }
+        },
+
+        ready: function () {
+          console.log("manage-user-view ready!");
+        },
+
+        _onClose: function() {
+          this.fire('close-manageusers');
+
+        },
+
+         _repeatRender: function(){
+           this.paperCard = Polymer.dom(this.root).querySelectorAll("paper-card");
+           this.animationConfig["entry"].push({
+             name: 'cascaded-animation',
+             animation: 'transform-animation',
+             transformFrom: "translateY(100vh)",
+             nodes: this.paperCard,
+             timing: {
+               delay: 0,
+               duration: 1000
+             }
+           })
+         }
+
+
+      });
+  </script>
+</dom-module>

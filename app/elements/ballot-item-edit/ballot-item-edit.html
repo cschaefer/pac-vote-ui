@@ -1,0 +1,227 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable-behavior.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/slide-from-right-animation.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/slide-right-animation.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/fade-in-animation.html">
+
+
+<dom-module id="ballot-item-edit">
+  <template>
+    <style is="custom-style" include="iron-flex iron-flex-alignment iron-positioning">
+      :host {
+        @apply(--layout-fit);
+        @apply(--layout-vertical);
+      }
+
+      :host paper-item {
+          padding: 3px 28px;
+      }
+
+      :host-context(.wide) paper-item {
+        padding: 3px 36px;
+      }
+
+      .ballot-card {
+        width: 41rem;
+        overflow: hidden;
+        --paper-card-header-color: #fff;
+        --paper-card-header: {
+          background-color: #03A9F4;
+        };
+        --paper-card-actions {
+          min-height: 12rem;
+        };
+      }
+
+
+      paper-item {
+        margin: 3px 0;
+        -webkit-transition: background-color 1s;
+        transition: background-color 1s;
+      }
+
+      paper-item.core-selected {
+        background-color: #b2ebf2;
+      }
+
+      paper-item::shadow #ripple {
+        color: #7cd9e6;
+      }
+
+
+      #viewContent {
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-image: url('../../images/touch/voting_hands.jpg');
+
+      }
+
+      .letter {
+        padding-right: 24px;
+      }
+
+      .container {
+        background: #fff;
+        height: 100%;
+      }
+
+      .content {
+        padding: 56px;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+    </style>
+
+    <div content id="viewContent" class="flex layout vertical center center-justified">
+
+      <paper-card id="ballotCard" class="ballot-card" heading="Edit Ballot" elevation="1">
+
+        <div class="card-content">
+          <paper-input id="question" label="Question" required auto-validate minlength="10" error-message="A question is required!" value="{{ballot.question}}"></paper-input>
+          <paper-textarea id="description" label="Description" maxlength="200" auto-validate allowed-pattern="[a-zA-Z]" value="{{ballot.description}}"></paper-textarea>
+
+          <div id="choices">
+
+            <template is="dom-repeat" items="{{ballot.choices}}" as="ballotChoice">
+
+              <div data-index="{{index}}">
+                <paper-item>
+                  <span class="letter">{{computeLetter(index)}}.</span>
+                  <paper-input class="choice" label="Please fill in your choices ..." no-label-float value="[[ballotChoice.description]]"></paper-input>
+                  <paper-icon-button icon="remove" title="remove" on-tap="onRemoveChoice"></paper-icon-button>
+                </paper-item>
+              </div>
+
+            </template>
+
+          </div>
+          <paper-icon-button icon="add" title="Add" on-tap="onAddChoice"></paper-icon-button>
+
+        </div>
+
+        <div class="card-actions">
+          <div class="layout horizontal end-justified">
+            <paper-button raised on-tap="_onSubmitAdd">Submit</paper-button>
+            <paper-button raised on-tap="_onCloseAdd">Cancel</paper-button>
+          </div>
+        </div>
+
+      </paper-card>
+
+    </div>
+
+
+  </template>
+
+  <script>
+
+      Polymer({
+        is: 'ballot-item-edit',
+
+        behaviors: [Polymer.NeonAnimatableBehavior],
+
+        properties: {
+          user: {
+            type: Object
+          },
+          ballot: {
+            type: Object
+          },
+          sharedElements: {
+            value: function(){
+              return {
+                'hero-edit': this.$.ballotCard
+              }
+            }
+          },
+          animationConfig: {
+            value: function() {
+              return {
+                'entry': [{
+                    name: 'hero-animation',
+                    id: 'hero-edit',
+                    toPage: this
+                },{
+                    name: 'fade-in-animation',
+                    node: this,
+                    timing: { delay: 200, duration: 500 }
+                }],
+                'exit': {
+                  name: 'slide-right-animation',
+                  node: this
+                }
+              }
+            }
+          }
+        },
+
+        onAddChoice: function() {
+          console.log("Adding new option");
+          this.push('ballotChoices', "");
+          for (var i = 0; i < this.ballot.choices.length; i++) {
+              console.log(this.ballot.choices[i]);
+          }
+          console.log("Total options " + this.ballot.choices.length);
+        },
+
+        onRemoveChoice: function(event) {
+
+          var srcElement = event.srcElement;
+          var parentElement = srcElement.parentNode.parentNode.parentNode;
+          console.log("Total options " + this.ballot.choices.length);
+          for (var i in this.ballot.choices) {
+            if (parentElement.dataIndex == i) {
+              console.log("Removing from index " + i);
+              this.splice('ballot.choices', i, 1);
+            }
+          }
+
+        },
+
+        computeLetter: function(i) {
+          return String.fromCharCode(65 + i);
+        },
+
+        _onSubmitAdd: function() {
+
+          var userOject = this.user;
+
+          // two way bindings not working
+          // instead us a query selector to pull out the values
+          var choices = Polymer.dom(this.root).querySelectorAll("paper-input.choice");
+
+          for (var i = 0; i < this.ballot.choices.length; i++) {
+            this.ballot.choices[i].name = this.computeLetter(i, this.ballot.choices[i]);
+            this.ballot.choices[i].description = choices[i].value;
+          }
+
+
+          console.log("Sending edit-ballot event ", this.ballot);
+
+          // take a clone
+          var ballotEvent = (JSON.parse(JSON.stringify(this.ballot)));
+          this.fire('edit-ballot', {ballot: ballotEvent});
+
+          this._onCloseAdd();
+        },
+
+        _onCloseAdd: function() {
+          this.fire('close-edit');
+
+        },
+
+        ready: function() {
+        }
+
+      });
+  </script>
+</dom-module>

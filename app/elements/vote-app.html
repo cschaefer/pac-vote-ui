@@ -1,0 +1,321 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/firebase-element/firebase-collection.html">
+<link rel="import" href="../bower_components/firebase-element/firebase-auth.html">
+
+<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animations.html">
+
+<link rel="import" href="manage-user-view/manage-user-view.html">
+<link rel="import" href="ballot-list-view/ballot-list-view.html">
+<link rel="import" href="ballot-result-view/ballot-result-view.html">
+<link rel="import" href="ballot-item-add/ballot-item-add.html">
+<link rel="import" href="datasource-ballots/datasource-ballots.html">
+<link rel="import" href="datasource-users/datasource-users.html">
+<link rel="import" href="ajax-users/ajax-user.html">
+<link rel="import" href="ajax-vote/ajax-vote.html">
+<link rel="import" href="ajax-ballots/ajax-ballot.html">
+<link rel="import" href="ajax-ballots/ajax-ballots.html">
+
+<dom-module id="vote-app">
+  <template>
+
+    <style is="custom-style" include="iron-flex iron-flex-alignment iron-positioning">
+      :host {
+        display: block;
+        height: 100%;
+      }
+      neon-animated-pages {
+        height: 100%;
+      }
+
+      ballot-list-view {
+        background-color: #0094da;
+      }
+
+      .splash {
+        background-color: #eee;
+        background-repeat: no-repeat;
+        background-position: 50%;
+        background-image: url('../../images/uncle-sam.svg');
+
+      }
+    </style>
+
+    <datasource-users location="[[location]]" user="{{user}}"></datasource-users>
+<!--    <datasource-ballots ballots="{{ballots}}"></datasource-ballots>-->
+    <ajax-user id="ajaxuser"
+      location="[[restServiceLocation]]"
+      user="[[user]]"
+      is-administrator="{{isAdministrator}}"
+      managed-users="{{managedUsers}}"
+      modify-user="{{modifyUser}}"
+      auth-token="{{authToken}}">
+    </ajax-user>
+    <ajax-vote id="ajaxvote"
+      location="[[restServiceLocation]]"
+      vote="[[voteCast]]"
+      ballot="[[resultForBallot]]"
+      my-votes="{{myvotes}}"
+      vote-results="{{voteResults}}"
+      auth-token="[[authToken]]"
+      on-vote-response="_onVoteResponse">
+    </ajax-vote>
+    <ajax-ballot id="ajaxballot"
+      location="[[restServiceLocation]]"
+      ballot="[[modifyBallot]]"
+      delete-ballot="[[deleteBallot]]"
+      auth-token="[[authToken]]"
+      on-ballot-response="_onBallotResponse">
+    </ajax-ballot>
+    <ajax-ballots id="ajaxballots"
+      location="[[restServiceLocation]]"
+      auth-token="[[authToken]]"
+      ballots="{{ballots}}"
+      loading="{{loading}}">
+    </ajax-ballots>
+
+    <neon-animated-pages id="pages" selected="{{selected}}">
+      <div name="splash" class="splash">
+      </div>
+      <ballot-list-view id="list" name="list"
+        user="{{user}}"
+        is-administrator="{{isAdministrator}}"
+        ballots="{{ballots}}"
+        on-show-add="_onShowAdd"
+        on-delete-ballot="_onDeleteBallot"
+        on-view-ballot="_onViewBallot"
+        on-edit-ballot="_onStartEditBallot"
+        on-activate-ballot="_onActivateBallot"
+        on-view-result="_onViewResult"
+        on-show-users="_onShowUsers"
+        loading="{{loading}}">
+      </ballot-list-view>
+      <ballot-item-add id="add" name="add"
+        user="{{user}}"
+        on-close-add="_onClose"
+        on-add-ballot="_onAddBallot">
+      </ballot-item-add>
+      <ballot-item-view id="view" name="view"
+        user="{{user}}" ballot="{{ballot}}"
+        on-submit-vote="_onSubmitVote"
+        on-close-vote="_onClose">
+      </ballot-item-view>
+      <ballot-item-edit id="edit" name="edit"
+        user="{{user}}" ballot="{{ballot}}"
+        on-edit-ballot="_onEditBallot"
+        on-close-edit="_onClose">
+      </ballot-item-edit>
+      <ballot-result-view id="result" name="result"
+        ballot="[[resultForBallot]]"
+        vote-results="[[voteResults]]"
+        on-close-result="_onClose">
+      </ballot-result-view>
+      <manage-user-view id="manageusers" name="manageusers"
+        managed-users="{{managedUsers}}"
+        is-administrator="[[isAdministrator]]"
+        on-close-manageusers="_onClose"
+        on-update-user="_onUpdateUser">
+      </manage-user-view>
+    </neon-animated-pages>
+
+  </template>
+  <script>
+
+        Polymer({
+          is: 'vote-app',
+
+          properties: {
+            ballots : {
+              type: Array,
+              notify: true
+            },
+            ballot : {
+              type: Object,
+              notify: true
+            },
+            modifyBallot : {
+              type: Object,
+              notify: true
+            },
+            deleteBallot : {
+              type: Object,
+              notify: true
+            },
+            voteCast: {
+              type: Object,
+              notify: true
+            },
+            myVotes: {
+              type: Array,
+              notify: true
+            },
+            resultForBallot : {
+              type: Object,
+              notify: true
+            },
+            voteResults: {
+              type: Array,
+              notify: true,
+              observer: '_voteResultsChanged'
+            },
+            modifyUser: {
+              type: Object,
+              notify: true
+            },
+            authToken: {
+              type: String,
+              notify:  true,
+              observer: '_authTokenChanged'
+            },
+            selected: {
+              type: String,
+              notify:  true,
+              value: '0'
+            },
+            minSplashTime: {
+              type: Number,
+              value: 1000
+            },
+            readyTime: {
+              type: Number
+            },
+            location: {
+              type: String,
+              value: "https://glowing-fire-9186.firebaseio.com"
+            },
+            restServiceLocation: {
+              type: String,
+              value: "https://localhost:8443/pac-vote/rest"
+            },
+            loading: {
+              type: Boolean,
+              notify: true
+            }
+
+          },
+
+          ready: function() {
+            this.readyTime = Date.now();
+            this.startup();
+          },
+
+          startup: function() {
+            var elapsed = Date.now() - this.readyTime;
+            var t = this.minSplashTime - elapsed;
+            this.async(this.completeStartup, this.minSplashTime);
+          },
+
+          completeStartup: function() {
+            console.log("Completing startup ...");
+              this.selected = '1';
+          },
+
+          _onShowAdd: function() {
+            console.log("Switching page 2");
+            this.selected = '2';
+          },
+          _onViewBallot: function(e) {
+            this.ballot = e.detail.ballot;
+            console.log("Event. User selected ballot ", this.ballot);
+            this.selected = '3';
+          },
+          _onStartEditBallot: function(e) {
+            this.ballot = e.detail.ballot;
+            this.selected = '4';
+          },
+          _onSubmitVote: function(event) {
+            console.log("Event. User voted ", event.detail.vote);
+            this.selected = '1';
+            this.voteCast = event.detail.vote;
+
+          },
+          _onVoteResponse: function(event) {
+            console.log("Event. User vote accepted");
+            this._refreshBallots();
+          },
+          _onClose: function() {
+            this.selected = '1';
+          },
+
+          _onAddBallot: function(e) {
+            console.log("Event. Added ballot ", e.detail.ballot);
+            this.modifyBallot=e.detail.ballot;
+            // firebase code
+//            this.push('ballots', e.detail.ballot);
+          },
+          _onActivateBallot: function(e) {
+            console.log("Event activate ballot ", event.detail.ballot);
+            var activatedBallot = event.detail.ballot;
+            activatedBallot.active = true;
+
+            this.modifyBallot = activatedBallot;
+          },
+          _onEditBallot: function(event) {
+            this.selected = '1';
+            console.log("Event Edited ballot ", event.detail.ballot);
+            this.modifyBallot = event.detail.ballot;
+
+            // Firebase code
+//            for(var i = 0; i < this.ballots.length; i++) {
+//                if(this.ballots[i].__firebaseKey__ == e.detail.ballot.__firebaseKey__) {
+//                    this.splice('ballots', i, 1, e.detail.ballot);
+//                    break;
+//                }
+//            }
+          },
+
+          _onBallotResponse: function(e) {
+            console.log("Change ballot OK", e.detail.ballot);
+            this._refreshBallots();
+          },
+
+          _onDeleteBallot: function(e) {
+            console.log("Deleting ballot ", e.detail.ballot);
+            this.deleteBallot = e.detail.ballot;
+            // Firebase code
+            // this.arrayDelete('ballots', e.detail.ballot);
+          },
+          _onViewResult: function(e) {
+            console.log("Viewing result", e.detail.ballot);
+            this.resultForBallot = e.detail.ballot;
+          },
+          _authTokenChanged: function(e) {
+            if (e) {
+              console.log("App Listener. Token changed ");
+              this._refreshBallots();
+            }
+          },
+          _voteResultsChanged: function(e) {
+            if (e) {
+              console.log("App Listener. Vote results changed ... ");
+              this.selected = '5';
+            }
+          },
+          _onShowUsers: function(e) {
+            if (e) {
+              var ajaxHandle = document.querySelector('ajax-user');
+              ajaxHandle.getManagedUsers();
+              console.log("App Listener. Showing users selected ... ");
+              this.selected = '6';
+            }
+          },
+          _onUpdateUser: function(e) {
+            this.modifyUser = e.detail.user;
+          },
+          _refreshBallots: function() {
+            var ajaxHandle = document.querySelector('ajax-ballots');
+            ajaxHandle.generateRequest();
+          }
+
+        });
+  </script>
+</dom-module>

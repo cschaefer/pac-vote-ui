@@ -1,0 +1,149 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<script src="../../bower_components/observe-js/src/observe.js"></script>
+
+<dom-module id="app-globals">
+  <script>
+    (function () {
+      Polymer({
+        is: 'app-globals',
+        properties: {
+          /**
+           * The (optional) `namespace` attribute lets you have multiple
+           * scopes of globals.
+           *
+           * @attribute namespace
+           * @type string
+           */
+          namespace: {
+            type: String,
+            notify: true
+          },
+
+          /**
+           * The `values` attribute is an object containing the set globals for
+           * the current namespace. You can bind to this.
+           */
+          values: {
+            type: Object,
+            notify: true
+          },
+
+          _instances: {
+            type: Array,
+            value: []
+          },
+
+          _globals: {
+            type: Object,
+            value: {}
+          },
+
+          _observers: {
+            type: Array,
+            value: []
+          }
+        },
+
+        observers: [
+          '_initObserver(values.*)'
+        ],
+
+        attached: function() {
+          this.push('_instances', this);
+        },
+
+        _initObserver: function(change) {
+          if (!this._globals[this.namespace || '__default'] && change.path === 'values') {
+            this._makeAndObserve(this.namespace || '__default', this.values);
+          }
+        },
+
+        _makeAndObserve: function(namespace, values) {
+          this._globals[namespace] || (this._globals[namespace] = values || {});
+          this._observers[namespace] = new ObjectObserver(this._globals[namespace]);
+          this._observers[namespace].open(function (a, r, c, o) {
+            this._observeFn(namespace, a, r, c, o);
+          }.bind(this));
+          return this._globals[namespace];
+        },
+
+        _observeFn: function(namespace, added, removed, changed, getOldValueFn) {
+          if (namespace === '__default') {
+            namespace = undefined;
+          }
+          console.log(added);
+          Object.keys(added).forEach(function (prop) {
+            var detail = {
+              event: 'add',
+              namespace: namespace,
+              property: prop,
+              value: added[prop],
+              oldValue: getOldValueFn(prop)
+            };
+            this._fire('app-globals-update', detail);
+            this._fire('app-globals-add', detail);
+          }.bind(this));
+          Object.keys(removed).forEach(function (prop) {
+            var detail = {
+              event: 'remove',
+              namespace: namespace,
+              property: prop,
+              value: undefined,
+              oldValue: getOldValueFn(prop)
+            };
+            this._fire('app-globals-update', detail);
+            this._fire('app-globals-remove', detail);
+          }.bind(this));
+          Object.keys(changed).forEach(function (prop) {
+            var detail = {
+              event: 'change',
+              namespace: namespace,
+              property: prop,
+              value: changed[prop],
+              oldValue: getOldValueFn(prop)
+            };
+            this._fire('app-globals-update', detail);
+            this._fire('app-globals-change', detail);
+          }.bind(this));
+        },
+
+        _fire: function(name, detail) {
+          this._instances.forEach(function (instance) {
+            if (instance.namespace === detail.namespace) {
+              instance.setAttribute('values', this.values);
+              instance.fire(name, detail);
+            }
+          }.bind(this));
+        }
+        /**
+          * The `app-globals-change` event is fired on each element whenever a
+          * global variable is added. The detail is an object including the
+          * `namespace`, `property`, `value`, and `oldValue`.
+          *
+          * @event app-globals-add
+          */
+         /**
+          * The `app-globals-change` event is fired on each element whenever a
+          * global variable is removed. The detail is an object including the
+          * `namespace`, `property`, `value`, and `oldValue`.
+          *
+          * @event app-globals-remove
+          */
+         /**
+          * The `app-globals-change` event is fired on each element whenever a
+          * global variable is modified. The detail is an object including the
+          * `namespace`, `property`, `value`, `oldValue`.
+          *
+          * @event app-globals-change
+          */
+         /**
+          * The `app-globals-update` event is fired on each element whenever any
+          * kind of alteration (add, remove, change) is made. The detail is an
+          * object including the `namespace`, `property`, `value`, `oldValue`.
+          *
+          * @event app-globals-update
+          */
+      });
+    }());
+  </script>
+</dom-module>

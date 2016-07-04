@@ -1,0 +1,65 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+
+
+<dom-module id="manage-user-item">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      .avatar {
+        display: block;
+        margin: 0 auto 10px auto;
+        border-radius: 50%;
+      }
+
+    </style>
+    <paper-card class="managed-user" elevation="1">
+        <div class="card-content">
+          <img class="avatar" src="[[managedUser.profileImageUrl]]" width="40">
+          <span class="user-name">[[managedUser.userName]]</span>
+
+        </div>
+
+        <div class="card-actions">
+          <iron-icon icon="supervisor-account" hidden=[[!managedUser.administrator]]></iron-icon>
+          <paper-icon-button icon="swap-vert"
+                             class="btn-edit layout end"
+                             aria-label="Toggle Administrator"
+                             hidden="{{!isAdministrator}}"
+                             tabindex="1"
+                             on-tap="_onToggleUser">
+
+
+        </div>
+
+    </paper-card>
+  </template>
+  <script>
+    Polymer({
+      is: 'manage-user-item',
+
+      properties: {
+        managedUser: {
+          type: Object
+        },
+        isAdministrator: {
+          type: Boolean
+        }
+      },
+
+      _onToggleUser: function() {
+        console.log("Selecting ", this.managedUser);
+        this.fire('update-user', {user:this.managedUser});
+      },
+
+    });
+  </script>
+</dom-module>

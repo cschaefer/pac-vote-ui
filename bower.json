@@ -1,0 +1,24 @@
+{
+  "name": "polymer-vote",
+  "private": true,
+  "dependencies": {
+    "iron-elements": "PolymerElements/iron-elements#^1.0.0",
+    "neon-elements": "PolymerElements/neon-elements#^1.0.0",
+    "page": "visionmedia/page.js#~1.6.4",
+    "paper-elements": "PolymerElements/paper-elements#^1.0.1",
+    "platinum-elements": "PolymerElements/platinum-elements#^1.1.0",
+    "polymer": "Polymer/polymer#^1.2.0",
+    "firebase-element": "GoogleWebComponents/firebase-element#^1.0.12",
+    "app-router": "~2.0.2",
+    "observe-js": "polymer/observe-js#~0.5.7",
+    "app-layout": "PolymerElements/app-layout#^0.9.0"
+  },
+  "devDependencies": {
+    "web-component-tester": "^4.0.0"
+  },
+  "ignore": [],
+  "resolutions": {
+    "webcomponentsjs": "0.7.22",
+    "polymer": "^1.2.0"
+  }
+}
