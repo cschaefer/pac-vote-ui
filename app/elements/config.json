@@ -1,0 +1,4 @@
+{
+  "restservicelocation": "https://localhost:8443/pac-vote/rest",
+  "firebaseservicelocation": "https://glowing-fire-9186.firebaseio.com"
+}

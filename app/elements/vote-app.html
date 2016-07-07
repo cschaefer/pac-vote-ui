@@ -2,6 +2,7 @@
 <link rel="import" href="../bower_components/paper-header-panel/paper-header-panel.html">
 <link rel="import" href="../bower_components/paper-toolbar/paper-toolbar.html">
 <link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/paper-menu/paper-menu.html">
 <link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
@@ -49,6 +50,12 @@
 
       }
     </style>
+
+    <iron-ajax auto
+      url="config.json"
+      handle-as="json"
+      last-response="{{jsondata}}">
+    </iron-ajax>
 
     <datasource-users location="[[location]]" user="{{user}}"></datasource-users>
 <!--    <datasource-ballots ballots="{{ballots}}"></datasource-ballots>-->
@@ -134,6 +141,11 @@
           is: 'vote-app',
 
           properties: {
+            jsondata : {
+              type: Object,
+              notify: true,
+              observer: '_onLoadConfiguration'
+            },
             ballots : {
               type: Array,
               notify: true
@@ -190,11 +202,11 @@
             },
             location: {
               type: String,
-              value: "https://glowing-fire-9186.firebaseio.com"
+              computed: '_computeFirebaseLocation(jsondata)'
             },
             restServiceLocation: {
               type: String,
-              value: "https://localhost:8443/pac-vote/rest"
+              computed: '_computeRestServiceLocation(jsondata)'
             },
             loading: {
               type: Boolean,
@@ -218,7 +230,12 @@
             console.log("Completing startup ...");
               this.selected = '1';
           },
-
+          _computeFirebaseLocation: function(config) {
+            return config.firebaseservicelocation;
+          },
+          _computeRestServiceLocation: function(config) {
+            return config.restservicelocation;
+          },
           _onShowAdd: function() {
             console.log("Switching page 2");
             this.selected = '2';
@@ -314,6 +331,9 @@
           _refreshBallots: function() {
             var ajaxHandle = document.querySelector('ajax-ballots');
             ajaxHandle.generateRequest();
+          },
+          _onLoadConfiguration: function() {
+            console.log("Loaded configuration", this.jsondata);
           }
 
         });
